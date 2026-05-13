@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2C1810" />
+  <link rel="manifest" href="manifest.json" />
+  <title>🧁 Panel - Bake Sale</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ─── Estilos extra para el dashboard ─── */
+    body {
+      padding-bottom: 0;
+      background: #F5F0EB;
+    }
+
+    .page-header {
+      background: linear-gradient(135deg, #2C1810, var(--primary-dark));
+      color: white;
+      padding: 24px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .page-header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-card .num {
+      font-size: 28px;
+      font-weight: 800;
+      display: block;
+    }
+
+    .stat-card .label {
+      font-size: 11px;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .toolbar button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .toolbar button:active {
+      transform: scale(0.95);
+    }
+
+    .btn-export {
+      background: var(--secondary);
+      color: var(--primary);
+      border: 2px solid var(--primary) !important;
+    }
+
+    .btn-refresh {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-clear {
+      background: #FFF0F0;
+      color: #C62828;
+    }
+
+    .orders-container {
+      padding: 12px 16px;
+      padding-bottom: 100px;
+    }
+
+    .order-card .order-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Auto-refresh indicator */
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #4CAF50;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Sección de resumen para cocina */
+    .kitchen-summary {
+      background: white;
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 12px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .kitchen-summary h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kitchen-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .kitchen-item:last-child {
+      border-bottom: none;
+    }
+
+    .kitchen-item .qty {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .password-prompt {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .password-box {
+      background: white;
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .password-box h2 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .password-box p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .password-box input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 18px;
+      text-align: center;
+      letter-spacing: 4px;
+      margin-bottom: 12px;
+    }
+
+    .password-box input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════ PROTECCIÓN CON CONTRASEÑA ═══════ -->
+  <div id="password-prompt" class="password-prompt">
+    <div class="password-box">
+      <span style="font-size: 48px;">🔒</span>
+      <h2>Panel Privado</h2>
+      <p>Ingresá la contraseña para ver los pedidos</p>
+      <input
+        type="password"
+        id="password-input"
+        placeholder="••••"
+        maxlength="4"
+        inputmode="numeric"
+        onkeydown="if(event.key==='Enter')checkPassword()"
+      />
+      <button class="btn-primary" onclick="checkPassword()">Ingresar</button>
+    </div>
+  </div>
+
+  <!-- ═══════ PANEL PRINCIPAL ═══════ -->
+  <div id="dashboard-main" style="display:none;">
+
+    <!-- Header con estadísticas -->
+    <div class="page-header">
+      <h1>🧁 Panel de Pedidos</h1>
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="num" id="stat-total">0</span>
+          <span class="label">Pedidos</span>
+        </div>
+        <div class="stat-card">
+          <span class="num" id="stat-pending">0</span>
+          <span class="label">Pendientes</span>
+        </div>
+        <div class="stat-card">
+          <span class="num" id="stat-revenue">$0</span>
+          <span class="label">Total Ventas</span>
+        </div>
+      </div>
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        Actualizado en tiempo real
+      </div>
+    </div>
+
+    <!-- Barra de herramientas -->
+    <div class="toolbar">
+      <button class="btn-refresh" onclick="loadDashboardOrders()">
+        🔄 Actualizar
+      </button>
+      <button class="btn-export" onclick="exportOrders()">
+        📥 Exportar
+      </button>
+      <button class="btn-clear" onclick="clearAllOrders()">
+        🗑 Limpiar
+      </button>
+    </div>
+
+    <!-- Resumen para la cocina -->
+    <div id="kitchen-summary" class="kitchen-summary">
+      <h3>👨‍🍳 Resumen para Cocina</h3>
+      <div id="kitchen-items">
+        <p style="color: var(--text-muted); font-size: 14px;">
+          Cargando...
+        </p>
+      </div>
+    </div>
+
+    <!-- Lista de pedidos -->
+    <div id="dashboard-orders" class="orders-container">
+      <div class="empty-state">
+        <span class="big-icon">📋</span>
+        <h3>No hay pedidos todavía</h3>
+        <p>Los pedidos aparecerán aquí cuando las familias confirmen desde la app</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════ TOAST ═══════ -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ═══════ SCRIPTS ═══════ -->
+  <script src="menu-data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // ─── Protección con contraseña ───
+    // Por defecto es: 2026 (el año del evento)
+    // Podés cambiarlo abajo 👇
+    const DASHBOARD_PASSWORD = "2026";
+
+    function checkPassword() {
+      const input = document.getElementById("password-input");
+      if (input.value === DASHBOARD_PASSWORD) {
+        document.getElementById("password-prompt").style.display = "none";
+        document.getElementById("dashboard-main").style.display = "block";
+        loadDashboardOrders();
+        loadKitchenSummary();
+
+        // Auto-refresh cada 10 segundos
+        setInterval(() => {
+          loadDashboardOrders();
+          loadKitchenSummary();
+        }, 10000);
+      } else {
+        showToast("🔒 Contraseña incorrecta", "error");
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    // ─── Resumen para cocina ───
+    function loadKitchenSummary() {
+      const container = document.getElementById("kitchen-items");
+      if (!container) return;
+
+      try {
+        const orders = JSON.parse(
+          localStorage.getItem("bake-sale-orders") || "[]"
+        );
+
+        // Solo pedidos pendientes o listos (no entregados)
+        const activeOrders = orders.filter(
+          (o) => o.status === "pending" || o.status === "ready"
+        );
+
+        // Agrupar por producto
+        const summary = {};
+        activeOrders.forEach((order) => {
+          order.items.forEach((item) => {
+            const key = item.id || item.name;
+            if (!summary[key]) {
+              summary[key] = { name: item.name, qty: 0 };
+            }
+            summary[key].qty += item.quantity;
+          });
+        });
+
+        const items = Object.values(summary);
+        if (items.length === 0) {
+          container.innerHTML =
+            '<p style="color: var(--text-muted); font-size: 14px;">✅ No hay pedidos activos</p>';
+          return;
+        }
+
+        // Ordenar por cantidad (mayor primero)
+        items.sort((a, b) => b.qty - a.qty);
+
+        const totalItems = items.reduce((sum, i) => sum + i.qty, 0);
+
+        container.innerHTML = `
+          <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-light);">
+            Total a preparar: <strong>${totalItems} productos</strong>
+          </div>
+          ${items
+            .map(
+              (item) => `
+            <div class="kitchen-item">
+              <span>${item.name}</span>
+              <span class="qty">${item.qty} ${item.qty === 1 ? "unidad" : "unidades"}</span>
+            </div>
+          `
+            )
+            .join("")}
+        `;
+      } catch (e) {
+        container.innerHTML = '<p style="color: var(--text-muted);">Error</p>';
+      }
+    }
+
+    // ─── Ver versión imprimible ───
+    document.addEventListener("DOMContentLoaded", () => {
+      // Si ya está autenticado (por ejemplo, si recarga)
+      if (localStorage.getItem("bake-sale-auth") === "true") {
+        document.getElementById("password-prompt").style.display = "none";
+        document.getElementById("dashboard-main").style.display = "block";
+        loadDashboardOrders();
+        loadKitchenSummary();
+        setInterval(() => {
+          loadDashboardOrders();
+          loadKitchenSummary();
+        }, 10000);
+      }
+    });
+
+    // Guardar sesión
+    const origCheck = checkPassword;
+    checkPassword = function() {
+      origCheck();
+      if (document.getElementById("dashboard-main").style.display === "block") {
+        localStorage.setItem("bake-sale-auth", "true");
+      }
+    };
+  </script>
+
+</body>
+</html>

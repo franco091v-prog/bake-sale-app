@@ -1,0 +1,12 @@
+{
+  "name": "bake-sale-app",
+  "version": "1.0.0",
+  "description": "Bake Sale Escolar - App de pedidos",
+  "main": "server-railway.js",
+  "scripts": {
+    "start": "node server-railway.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  }
+}

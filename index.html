@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#D2691E" />
+  <meta name="description" content="Bake Sale Escolar - Hacé tu pedido online" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Bake Sale" />
+  <title>🧁 Bake Sale - Pedidos</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ═══════ MENÚ DE PEDIDOS ═══════ -->
+  <div id="menu-page" class="page">
+
+    <!-- Header -->
+    <header class="header">
+      <span class="header-icon">🧁</span>
+      <h1 id="event-name">Bake Sale</h1>
+      <p id="event-date"></p>
+      <div class="date-badge">📅 Sábado 16 de Mayo</div>
+    </header>
+
+    <!-- Nombre de la familia -->
+    <div class="family-section">
+      <label class="family-label" for="familyName">👨‍👩‍👧‍👦 Nombre de la familia *</label>
+      <input
+        type="text"
+        id="familyName"
+        class="family-input"
+        placeholder="Ej: Familia García"
+        autocomplete="off"
+      />
+    </div>
+
+    <!-- Menú Salado -->
+    <div class="section-title">
+      <span class="emoji">🥪</span>
+      Menú Salado
+      <span class="section-line"></span>
+    </div>
+    <div id="savory-grid" class="menu-grid"></div>
+
+    <!-- Menú Dulce -->
+    <div class="section-title">
+      <span class="emoji">🍪</span>
+      Menú Dulce
+      <span class="section-line"></span>
+    </div>
+    <div id="sweet-grid" class="menu-grid"></div>
+
+  </div>
+
+  <!-- ═══════ CONFIRMACIÓN ═══════ -->
+  <div id="confirmation-page" class="page hidden">
+    <div class="confirmation">
+      <span class="big-icon">🎉</span>
+      <h2>¡Pedido Confirmado!</h2>
+      <p>Tu pedido fue registrado correctamente.</p>
+      <p style="font-size: 13px; color: var(--text-muted);">
+        Mostrá este número cuando pases a retirar
+      </p>
+
+      <div class="order-number" id="confirm-order-number">#001</div>
+
+      <div style="background: var(--secondary); border-radius: var(--radius); padding: 16px; margin: 16px 0; text-align: left;">
+        <p style="font-weight: 600; margin-bottom: 8px;" id="confirm-family"></p>
+        <ul id="confirm-items" style="list-style: none; font-size: 14px; line-height: 1.8;"></ul>
+        <p style="font-weight: 800; font-size: 20px; margin-top: 12px; color: var(--primary);" id="confirm-total"></p>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+        📱 Podés mostrar esta pantalla o hacer una captura
+      </p>
+
+      <button class="btn-primary" onclick="newOrder()">
+        🆕 Hacer otro pedido
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════ MODAL DEL PEDIDO ═══════ -->
+  <div id="order-modal" class="modal-overlay" onclick="if(event.target===this)closeOrderModal()">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h2>🛒 Tu Pedido</h2>
+      <p class="family-name-display" id="order-summary-name"></p>
+
+      <ul class="order-items" id="order-summary-items"></ul>
+
+      <div class="order-total">
+        <span>Total</span>
+        <span class="total-amount" id="order-summary-total">$0</span>
+      </div>
+
+      <button class="btn-primary" onclick="submitOrder()">
+        ✅ Confirmar Pedido
+      </button>
+      <button class="btn-secondary" onclick="closeOrderModal()">
+        Seguir agregando
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════ BARRA FLOTANTE DEL CARRITO ═══════ -->
+  <div id="cart-bar" class="cart-bar">
+    <div class="cart-info">
+      <span class="cart-count" id="cart-count">0 productos</span>
+      <span class="cart-total" id="cart-total">$0</span>
+    </div>
+    <button class="cart-btn" onclick="openOrderModal()">
+      📋 Ver Pedido
+    </button>
+  </div>
+
+  <!-- ═══════ TOAST NOTIFICACIONES ═══════ -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ═══════ SCRIPTS ═══════ -->
+  <script src="menu-data.js"></script>
+  <script src="app.js"></script>
+
+  <!-- ═══════ SERVICE WORKER (OFFLINE) ═══════ -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('📡 Modo offline activado'))
+          .catch(() => console.log('⚠️ Service Worker no disponible'));
+      });
+    }
+  </script>
+
+</body>
+</html>
