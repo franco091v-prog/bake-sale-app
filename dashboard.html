@@ -303,22 +303,21 @@
   <script src="app.js"></script>
   <script>
     // ─── Protección con contraseña ───
-    // Por defecto es: 2026 (el año del evento)
-    // Podés cambiarlo abajo 👇
     const DASHBOARD_PASSWORD = "2026";
 
-    function checkPassword() {
+    async function checkPassword() {
       const input = document.getElementById("password-input");
       if (input.value === DASHBOARD_PASSWORD) {
         document.getElementById("password-prompt").style.display = "none";
         document.getElementById("dashboard-main").style.display = "block";
-        loadDashboardOrders();
-        loadKitchenSummary();
+        localStorage.setItem("bake-sale-auth", "true");
+
+        // Cargar pedidos desde el servidor
+        await loadDashboardOrders();
 
         // Auto-refresh cada 10 segundos
         setInterval(() => {
           loadDashboardOrders();
-          loadKitchenSummary();
         }, 10000);
       } else {
         showToast("🔒 Contraseña incorrecta", "error");
@@ -327,88 +326,19 @@
       }
     }
 
-    // ─── Resumen para cocina ───
-    function loadKitchenSummary() {
-      const container = document.getElementById("kitchen-items");
-      if (!container) return;
-
-      try {
-        const orders = JSON.parse(
-          localStorage.getItem("bake-sale-orders") || "[]"
-        );
-
-        // Solo pedidos pendientes o listos (no entregados)
-        const activeOrders = orders.filter(
-          (o) => o.status === "pending" || o.status === "ready"
-        );
-
-        // Agrupar por producto
-        const summary = {};
-        activeOrders.forEach((order) => {
-          order.items.forEach((item) => {
-            const key = item.id || item.name;
-            if (!summary[key]) {
-              summary[key] = { name: item.name, qty: 0 };
-            }
-            summary[key].qty += item.quantity;
-          });
-        });
-
-        const items = Object.values(summary);
-        if (items.length === 0) {
-          container.innerHTML =
-            '<p style="color: var(--text-muted); font-size: 14px;">✅ No hay pedidos activos</p>';
-          return;
-        }
-
-        // Ordenar por cantidad (mayor primero)
-        items.sort((a, b) => b.qty - a.qty);
-
-        const totalItems = items.reduce((sum, i) => sum + i.qty, 0);
-
-        container.innerHTML = `
-          <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-light);">
-            Total a preparar: <strong>${totalItems} productos</strong>
-          </div>
-          ${items
-            .map(
-              (item) => `
-            <div class="kitchen-item">
-              <span>${item.name}</span>
-              <span class="qty">${item.qty} ${item.qty === 1 ? "unidad" : "unidades"}</span>
-            </div>
-          `
-            )
-            .join("")}
-        `;
-      } catch (e) {
-        container.innerHTML = '<p style="color: var(--text-muted);">Error</p>';
-      }
-    }
-
-    // ─── Ver versión imprimible ───
-    document.addEventListener("DOMContentLoaded", () => {
-      // Si ya está autenticado (por ejemplo, si recarga)
+    // ─── Auto-login si ya estaba autenticado ───
+    document.addEventListener("DOMContentLoaded", async () => {
       if (localStorage.getItem("bake-sale-auth") === "true") {
         document.getElementById("password-prompt").style.display = "none";
         document.getElementById("dashboard-main").style.display = "block";
-        loadDashboardOrders();
-        loadKitchenSummary();
+
+        await loadDashboardOrders();
+
         setInterval(() => {
           loadDashboardOrders();
-          loadKitchenSummary();
         }, 10000);
       }
     });
-
-    // Guardar sesión
-    const origCheck = checkPassword;
-    checkPassword = function() {
-      origCheck();
-      if (document.getElementById("dashboard-main").style.display === "block") {
-        localStorage.setItem("bake-sale-auth", "true");
-      }
-    };
   </script>
 
 </body>
